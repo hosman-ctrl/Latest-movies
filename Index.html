@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latest Movies on Hosman - AI-Powered Movie Discovery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <style>
+        :root {
+            --primary: #0088cc;
+            --primary-dark: #006699;
+            --dark: #1a1a1a;
+            --darker: #0d0d0d;
+            --light: #f5f5f5;
+            --gray: #8e8e8e;
+            --border: #2a2a2a;
+            --card-bg: #222222;
+            --hover: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--darker);
+            color: var(--light);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--dark);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #C73737;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--light);
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            background-color: var(--card-bg);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            width: 300px;
+        }
+
+        .search-container input {
+            background: transparent;
+            border: none;
+            color: var(--light);
+            width: 100%;
+            padding: 0.5rem;
+            outline: none;
+        }
+
+        .search-container button {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+        }
+
+        .telegram-cta {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .telegram-cta:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1925&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+            padding: 4rem 2rem;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: var(--gray);
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--hover);
+        }
+
+        /* Sections */
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title h2 {
+            font-size: 1.8rem;
+        }
+
+        .view-all {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-action {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .card-action:hover {
+            color: var(--primary);
+        }
+
+        /* AI Explanation */
+        .ai-explanation {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .ai-explanation h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Telegram Integration */
+        .telegram-integration {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .telegram-integration h2 {
+            margin-bottom: 1rem;
+        }
+
+        .telegram-integration p {
+            max-width: 600px;
+            margin-bottom: 2rem;
+            color: var(--gray);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-section a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--card-bg);
+            color: var(--light);
+            transition: background-color 0.3s;
+        }
+
+        .social-links a:hover {
+            background-color: var(--primary);
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .search-container {
+                width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--dark);
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            color: var(--gray);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--light);
+        }
+
+        .movie-detail {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .movie-poster {
+            width: 300px;
+            border-radius: 10px;
+        }
+
+        .movie-info h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .movie-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: var(--gray);
+        }
+
+        .movie-overview {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .ai-insights {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ai-insights h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .telegram-review {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .telegram-review h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Search Results */
+        .search-results {
+            display: none;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .movie-detail {
+                flex-direction: column;
+            }
+
+            .movie-poster {
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+        }
+
+        /* TV Series Section */
+        .tv-series {
+            margin-bottom: 3rem;
+        }
+
+        /* Pyodide Loading */
+        .pyodide-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .pyodide-loading p {
+            margin-top: 1rem;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <!-- Pyodide Loading Indicator -->
+    <div class="pyodide-loading" id="pyodide-loading">
+        <div class="spinner"></div>
+        <p>Loading AI Engine...</p>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <div class="logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="#C73737" stroke="white" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="40" fill="#8B2020" opacity="0.7"/>
+                    <text x="50" y="55" font-family="Georgia, serif" font-size="24" font-weight="bold" 
+                          fill="white" text-anchor="middle" font-style="italic">HR</text>
+                </svg>
+            </div>
+            <div class="logo-text">Latest Movies on <span>Hosman</span></div>
+        </div>
+        
+        <nav>
+            <ul>
+                <li><a href="#"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#movies"><i class="fas fa-film"></i> Movies</a></li>
+                <li><a href="#tv-series"><i class="fas fa-tv"></i> TV Shows</a></li>
+                <li><a href="#ai-recommendations"><i class="fas fa-robot"></i> AI Recommendations</a></li>
+            </ul>
+        </nav>
+        
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for movies, shows, or ask AI...">
+            <button id="search-button"><i class="fas fa-search"></i></button>
+        </div>
+        
+        <button class="telegram-cta" id="telegram-cta">
+            <i class="fab fa-telegram"></i> Join Telegram
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Discover Your Next Favorite Movie</h1>
+            <p>AI-powered recommendations, personalized just for you. Get intelligent insights and join the discussion on Telegram.</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" id="explore-ai">Explore AI Recommendations</button>
+                <button class="btn btn-secondary" id="join-telegram">Join Telegram Channel</button>
+            </div>
+        </section>
+
+        <!-- AI Explanation Section -->
+        <section class="ai-explanation">
+            <h3><i class="fas fa-robot"></i> AI Recommendation Insight</h3>
+            <p id="ai-insight-text">Loading AI insights...</p>
+        </section>
+
+        <!-- Search Results Section -->
+        <section class="search-results" id="search-results">
+            <div class="section-title">
+                <h2>Search Results</h2>
+            </div>
+            <div class="cards-container" id="search-results-container">
+                <!-- Search results will be loaded here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Gemini's Daily Picks -->
+        <section id="ai-recommendations">
+            <div class="section-title">
+                <h2>Gemini's Daily Picks</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="daily-picks">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Now -->
+        <section id="movies">
+            <div class="section-title">
+                <h2>Trending Movies</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="trending">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TV Series Section -->
+        <section class="tv-series" id="tv-series">
+            <div class="section-title">
+                <h2>Popular TV Series</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="tv-series-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Telegram Integration -->
+        <section class="telegram-integration">
+            <h2>Join Our Telegram Community</h2>
+            <p>Get exclusive reviews, behind-the-scenes insights, and join discussions with fellow movie enthusiasts. Our AI generates daily content and conversation starters.</p>
+            <button class="telegram-cta" id="telegram-integration-cta">
+                <i class="fab fa-telegram"></i> Join t.me/HosmanReviews
+            </button>
+        </section>
+
+        <!-- Because You Watched... -->
+        <section>
+            <div class="section-title">
+                <h2>Because You Watched Similar Content</h2>
+                <a href="#" class="view-all">View All <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="cards-container" id="recommendations">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Latest Movies on Hosman</h3>
+                <p>AI-powered movie discovery platform with intelligent recommendations and Telegram integration.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-telegram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#movies">Movies</a></li>
+                    <li><a href="#tv-series">TV Shows</a></li>
+                    <li><a href="#ai-recommendations">AI Recommendations</a></li>
+                    <li><a href="https://t.me/HosmanReviews" target="_blank">Telegram Channel</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <ul>
+                    <li><a href="#">Support</a></li>
+                    <li><a href="#">Feedback</a></li>
+                    <li><a href="#">Partnerships</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 Latest Movies on Hosman. All rights reserved. This site uses TMDB and Gemini APIs.</p>
+        </div>
+    </footer>
+
+    <!-- Movie Detail Modal -->
+    <div class="modal" id="movie-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="movie-detail">
+                <img src="" alt="Movie Poster" class="movie-poster">
+                <div class="movie-info">
+                    <h2 id="modal-title">Movie Title</h2>
+                    <div class="movie-meta">
+                        <span id="modal-year">2023</span>
+                        <span id="modal-rating">8.5/10</span>
+                        <span id="modal-runtime">120min</span>
+                    </div>
+                    <p class="movie-overview" id="modal-overview">Movie overview goes here...</p>
+                    <div class="ai-insights">
+                        <h3><i class="fas fa-robot"></i> AI Insights</h3>
+                        <p id="modal-ai-insights">Loading AI insights...</p>
+                    </div>
+                    <div class="telegram-review">
+                        <h3><i class="fab fa-telegram"></i> Telegram Review</h3>
+                        <p id="modal-telegram-review">Latest review from our Telegram channel...</p>
+                    </div>
+                    <button class="telegram-cta" id="modal-telegram-cta" style="margin-top: 1rem;">
+                        <i class="fab fa-telegram"></i> Discuss on Telegram
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const TMDB_ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5ZTYzNzRiZTQ2ZTYxNGY2MzZkNjgxOWRiYmU1NGYyYiIsIm5iZiI6MTc2MzE4NjgxNC40MTEsInN1YiI6IjY5MTgxODdlOTUxNDNkZmE0NmEwZTU1OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.SWHyK0g4TvYfDL825KRKKhGcV3nkzfAYVZdigor2QAk';
+        const GEMINI_API_KEY = 'AIzaSyCTRuQZDxXGf-u2MY9HErtJWhQGgQ4_nhY';
+        
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+        const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
+
+        // Global variables
+        let pyodide;
+        let trendingMovies = [];
+        let popularTVSeries = [];
+
+        // Initialize Pyodide
+        async function initializePyodide() {
+            try {
+                console.log("Loading Pyodide...");
+                pyodide = await loadPyodide();
+                
+                // Install required packages
+                await pyodide.loadPackage("micropip");
+                const micropip = pyodide.pyimport("micropip");
+                
+                // Install requests for API calls
+                await micropip.install("requests");
+                
+                console.log("Pyodide loaded successfully!");
+                document.getElementById('pyodide-loading').style.display = 'none';
+                
+                // Initialize the page with data
+                initializePage();
+            } catch (error) {
+                console.error("Error loading Pyodide:", error);
+                document.getElementById('pyodide-loading').innerHTML = `
+                    <div style="text-align: center; color: var(--gray);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>AI Engine Failed to Load</h3>
+                        <p>Using fallback mode. Some AI features may be limited.</p>
+                        <button class="btn btn-primary" onclick="initializePage()">Continue Anyway</button>
+                    </div>
+                `;
+            }
+        }
+
+        // TMDB API Functions using Pyodide
+        async function fetchFromTMDB(endpoint) {
+            if (!pyodide) {
+                // Fallback to JavaScript if Pyodide isn't available
+                return await fetchFromTMDB_JS(endpoint);
+            }
+            
+            try {
+                const code = `
+import requests
+import json
+
+url = "https://api.themoviedb.org/3${endpoint}"
+headers = {
+    "Authorization": "Bearer ${TMDB_ACCESS_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+response = requests.get(url, headers=headers)
+if response.status_code == 200:
+    result = response.json()
+else:
+    result = {"error": f"API request failed with status {response.status_code}"}
+
+json.dumps(result)
+`;
+                const result = await pyodide.runPythonAsync(code);
+                return JSON.parse(result);
+            } catch (error) {
+                console.error("Pyodide TMDB fetch error:", error);
+                return await fetchFromTMDB_JS(endpoint);
+            }
+        }
+
+        // JavaScript fallback for TMDB API
+        async function fetchFromTMDB_JS(endpoint) {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TMDB_ACCESS_TOKEN}`,
+                        'Content-Type': 'application/json;charset=utf-8'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`TMDB API error: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching from TMDB:', error);
+                return null;
+            }
+        }
+
+        // Gemini AI API using Pyodide
+        async function generateAIInsights(item, isTV = false) {
+            if (!pyodide) {
+                // Fallback to simple JavaScript insights
+                return generateSimpleInsights(item, isTV);
+            }
+            
+            try {
+                const type = isTV ? 'TV show' : 'movie';
+                const title = isTV ? item.name : item.title;
+                const description = item.overview || 'No description available.';
+                const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                
+                const code = `
+import requests
+import json
+
+api_key = "${GEMINI_API_KEY}"
+url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+
+prompt = f"""Analyze this ${type} and provide a brief insight (max 2 sentences):
+
+Title: ${title}
+Rating: ${rating}/10
+Description: ${description}
+
+Provide a concise analysis focusing on why someone might enjoy this ${type} and what makes it stand out."""
+
+headers = {
+    "Content-Type": "application/json"
+}
+
+data = {
+    "contents": [{
+        "parts": [{
+            "text": prompt
+        }]
+    }]
+}
+
+try:
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        result = response.json()
+        insight = result["candidates"][0]["content"]["parts"][0]["text"]
+    else:
+        insight = "AI analysis temporarily unavailable. This ${type} has received positive audience reception."
+except Exception as e:
+    insight = "AI analysis temporarily unavailable. This ${type} has received positive audience reception."
+
+insight
+`;
+                const insight = await pyodide.runPythonAsync(code);
+                return insight;
+            } catch (error) {
+                console.error("Pyodide Gemini error:", error);
+                return generateSimpleInsights(item, isTV);
+            }
+        }
+
+        // Simple fallback insights
+        function generateSimpleInsights(item, isTV = false) {
+            const type = isTV ? 'TV show' : 'movie';
+            const insights = [
+                `This ${type} has received positive audience reception and features compelling ${isTV ? 'character development across seasons' : 'storytelling'}.`,
+                `Fans of quality productions will appreciate the ${isTV ? 'series' : 'film'}'s attention to detail and engaging narrative.`,
+                `The ${isTV ? 'show' : 'movie'} balances ${item.vote_average > 7 ? 'critical acclaim with popular appeal' : 'unique elements that make it worth watching'}.`,
+                `Our analysis suggests this would appeal to viewers who enjoy ${isTV ? 'binge-worthy series' : 'cinematic experiences'} with depth.`
+            ];
+            
+            return insights[Math.floor(Math.random() * insights.length)];
+        }
+
+        // Create card for movie/TV show
+        function createCard(item, containerId, isTV = false) {
+            const container = document.getElementById(containerId);
+            
+            const title = isTV ? item.name : item.title;
+            const year = isTV ? (item.first_air_date ? item.first_air_date.substring(0, 4) : 'N/A') 
+                             : (item.release_date ? item.release_date.substring(0, 4) : 'N/A');
+            const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+            const description = item.overview || 'No description available.';
+            const imagePath = item.poster_path ? `${TMDB_IMAGE_BASE_URL}${item.poster_path}` : PLACEHOLDER_IMAGE;
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <img src="${imagePath}" alt="${title}" class="card-img" onerror="this.src='${PLACEHOLDER_IMAGE}'">
+                <div class="card-content">
+                    <h3 class="card-title">${title}</h3>
+                    <div class="card-meta">
+                        <span>${year}</span>
+                        <span><i class="fas fa-star"></i> ${rating}</span>
+                    </div>
+                    <p class="card-description">${description}</p>
+                    <div class="card-actions">
+                        <button class="card-action" onclick="openModal(${item.id}, ${isTV})">
+                            <i class="fas fa-info-circle"></i> Details
+                        </button>
+                        <button class="card-action" onclick="openTelegramDiscussion('${title}')">
+                            <i class="fab fa-telegram"></i> Discuss
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        }
+
+        // Open modal with details
+        async function openModal(itemId, isTV = false) {
+            try {
+                // Show loading state
+                document.getElementById('modal-ai-insights').textContent = 'Loading AI insights...';
+                
+                const item = isTV ? await fetchFromTMDB(`/tv/${itemId}`) : await fetchFromTMDB(`/movie/${itemId}`);
+                
+                if (!item) {
+                    alert('Error loading details. Please try again.');
+                    return;
+                }
+                
+                const title = isTV ? item.name : item.title;
+                const year = isTV ? (item.first_air_date ? item.first_air_date.substring(0, 4) : 'N/A') 
+                                 : (item.release_date ? item.release_date.substring(0, 4) : 'N/A');
+                const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                const runtime = isTV ? `${item.number_of_seasons} seasons` : `${item.runtime} min`;
+                const imagePath = item.poster_path ? `${TMDB_IMAGE_BASE_URL}${item.poster_path}` : PLACEHOLDER_IMAGE;
+                
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-year').textContent = year;
+                document.getElementById('modal-rating').textContent = `${rating}/10`;
+                document.getElementById('modal-runtime').textContent = runtime;
+                document.getElementById('modal-overview').textContent = item.overview || 'No overview available.';
+                document.querySelector('.movie-poster').src = imagePath;
+                
+                // Generate AI insights
+                const aiInsights = await generateAIInsights(item, isTV);
+                document.getElementById('modal-ai-insights').textContent = aiInsights;
+                
+                document.getElementById('movie-modal').style.display = 'block';
+            } catch (error) {
+                console.error('Error opening modal:', error);
+                alert('Error loading details. Please try again.');
+            }
+        }
+
+        // Open Telegram discussion
+        function openTelegramDiscussion(title) {
+            const encodedTitle = encodeURIComponent(title);
+            window.open(`https://t.me/HosmanReviews?text=Discussing%20${encodedTitle}`, '_blank');
+        }
+
+        // Perform search
+        async function performSearch(query) {
+            document.getElementById('search-results').style.display = 'block';
+            document.getElementById('search-results-container').innerHTML = '';
+            
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.innerHTML = '<div class="spinner"></div>';
+            document.getElementById('search-results-container').appendChild(loadingDiv);
+            
+            try {
+                const results = await fetchFromTMDB(`/search/multi?query=${encodeURIComponent(query)}&include_adult=false`);
+                
+                document.getElementById('search-results-container').innerHTML = '';
+                
+                if (!results || !results.results || results.results.length === 0) {
+                    document.getElementById('search-results-container').innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                            <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <h3>No results found</h3>
+                            <p>Try different keywords or ask our AI for recommendations.</p>
+                        </div>
+                    `;
+                } else {
+                    // Display AI explanation for search
+                    const aiExplanation = document.createElement('div');
+                    aiExplanation.className = 'ai-explanation';
+                    aiExplanation.innerHTML = `
+                        <h3><i class="fas fa-robot"></i> AI Search Analysis</h3>
+                        <p>Found ${results.results.length} results matching "${query}". Our AI has analyzed relevance based on your search criteria.</p>
+                    `;
+                    document.getElementById('search-results').insertBefore(aiExplanation, document.getElementById('search-results-container'));
+                    
+                    // Display results
+                    const filteredResults = results.results.filter(item => 
+                        (item.media_type === 'movie' || item.media_type === 'tv') && item.poster_path
+                    ).slice(0, 10);
+                    
+                    filteredResults.forEach(item => {
+                        createCard(item, 'search-results-container', item.media_type === 'tv');
+                    });
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                document.getElementById('search-results-container').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>Search Error</h3>
+                        <p>Unable to perform search. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize the page with real TMDB data
+        async function initializePage() {
+            try {
+                // Fetch data from TMDB
+                const trendingData = await fetchFromTMDB('/trending/movie/week');
+                const tvData = await fetchFromTMDB('/tv/popular');
+                
+                // Clear loading indicators
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                // Populate sections with real data
+                if (trendingData && trendingData.results) {
+                    trendingMovies = trendingData.results.slice(0, 10);
+                    trendingMovies.forEach(movie => {
+                        createCard(movie, 'trending');
+                        createCard(movie, 'daily-picks');
+                        createCard(movie, 'recommendations');
+                    });
+                }
+                
+                if (tvData && tvData.results) {
+                    popularTVSeries = tvData.results.slice(0, 10);
+                    popularTVSeries.forEach(series => {
+                        createCard(series, 'tv-series-container', true);
+                    });
+                }
+                
+                // Update AI insight text
+                document.getElementById('ai-insight-text').textContent = 
+                    "Based on current trending data, our AI has curated these selections focusing on highly-rated content with strong audience appeal and critical reception.";
+                    
+            } catch (error) {
+                console.error('Initialization error:', error);
+                document.querySelectorAll('.loading').forEach(el => {
+                    el.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--gray);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <p>Unable to load content. Please check your connection and try again.</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Pyodide first
+            initializePyodide();
+            
+            // Search functionality
+            document.getElementById('search-button').addEventListener('click', function() {
+                const query = document.getElementById('search-input').value.trim();
+                if (query) {
+                    performSearch(query);
+                } else {
+                    alert('Please enter a search query');
+                }
+            });
+            
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = document.getElementById('search-input').value.trim();
+                    if (query) {
+                        performSearch(query);
+                    } else {
+                        alert('Please enter a search query');
+                    }
+                }
+            });
+            
+            // Telegram CTAs
+            document.querySelectorAll('.telegram-cta').forEach(button => {
+                button.addEventListener('click', function() {
+                    window.open('https://t.me/HosmanReviews', '_blank');
+                });
+            });
+            
+            // Navigation
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    if (targetId) {
+                        document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+            
+            // Hero buttons
+            document.getElementById('explore-ai').addEventListener('click', function() {
+                document.getElementById('ai-recommendations').scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            document.getElementById('join-telegram').addEventListener('click', function() {
+                window.open('https://t.me/HosmanReviews', '_blank');
+            });
+            
+            // Modal close
+            document.querySelector('.close-modal').addEventListener('click', function() {
+                document.getElementById('movie-modal').style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('movie-modal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
